@@ -1,0 +1,998 @@
+#include <iostream>
+using namespace std;
+
+struct No {
+    int valor;
+    No* esquerda;
+    No* direita;
+
+    No(int val) : valor(val), esquerda(nullptr), direita(nullptr) {}
+};
+
+class ArvoreBinaria {
+private:
+    No* raiz;
+
+    No* inserir(No* no, int valor) {
+        if (no == nullptr)
+            return new No(valor);
+        if (valor < no->valor)
+            no->esquerda = inserir(no->esquerda, valor);
+        else if (valor > no->valor)
+            no->direita = inserir(no->direita, valor);
+        return no;
+    }
+
+    No* buscar(No* no, int valor) {
+        if (no == nullptr || no->valor == valor)
+            return no;
+        if (valor < no->valor)
+            return buscar(no->esquerda, valor);
+        else
+            return buscar(no->direita, valor);
+    }
+
+    No* encontrarMinimo(No* no) {
+        while (no && no->esquerda != nullptr)
+            no = no->esquerda;
+        return no;
+    }
+
+    No* remover(No* no, int valor) {
+        if (no == nullptr) return no;
+        if (valor < no->valor) {
+            no->esquerda = remover(no->esquerda, valor);
+        } else if (valor > no->valor) {
+            no->direita = remover(no->direita, valor);
+        } else {
+            if (no->esquerda == nullptr) {
+                No* temp = no->direita;
+                delete no;
+                return temp;
+            } else if (no->direita == nullptr) {
+                No* temp = no->esquerda;
+                delete no;
+                return temp;
+            }
+            No* temp = encontrarMinimo(no->direita);
+            no->valor = temp->valor;
+            no->direita = remover(no->direita, temp->valor);
+        }
+        return no;
+    }
+
+    void inOrder(No* no) {
+        if (no != nullptr) {
+            inOrder(no->esquerda);
+            printf("%d ", no->valor);
+            inOrder(no->direita);
+        }
+    }
+
+public:
+    ArvoreBinaria() : raiz(nullptr) {}
+
+    void inserir(int valor) {
+        raiz = inserir(raiz, valor);
+    }
+
+    void buscar(int valor) {
+        No* resultado = buscar(raiz, valor);
+        if (resultado != nullptr)
+            printf("Valor %d encontrado na árvore.\n", valor);
+        else
+            printf("Valor %d não encontrado.\n", valor);
+    }
+
+    void remover(int valor) {
+        raiz = remover(raiz, valor);
+    }
+
+    void exibirEmOrdem() {
+        printf("Árvore em ordem: ");
+        inOrder(raiz);
+        printf("\n");
+    }
+};
+
+int main() {
+    ArvoreBinaria arvore;
+    int opcao, valor;
+
+    do {
+        printf("\nMenu de Operações:\n");
+        printf("1. Inserir um valor\n");
+        printf("2. Buscar um valor\n");
+        printf("3. Remover um valor\n");
+        printf("4. Exibir em ordem\n");
+        printf("5. Sair\n");
+        printf("Escolha uma opção: ");
+        cin >> opcao;
+
+        if (opcao == 1) {
+            printf("Digite o valor a inserir: ");
+            cin >> valor;
+            arvore.inserir(valor);
+        }
+        else if (opcao == 2) {
+            printf("Digite o valor a buscar: ");
+            cin >> valor;
+            arvore.buscar(valor);
+        }
+        else if (opcao == 3) {
+            printf("Digite o valor a remover: ");
+            cin >> valor;
+            arvore.remover(valor);
+        }
+        else if (opcao == 4) {
+            arvore.exibirEmOrdem();
+        }
+        else if (opcao == 5) {
+            printf("Encerrando o programa.\n");
+        }
+        else {
+            printf("Opção inválida. Tente novamente.\n");
+        }
+
+    } while (opcao != 5);
+
+    return 0;
+}
+
+
+Parte 2
+typedef struct Produto {
+    int id;
+    char nome[100];
+    int quantidade;
+    float preco;
+} Produto;
+
+typedef struct No {
+    Produto produto;
+    struct No *esq;
+    struct No *dir;
+} No;
+
+No* criarNo(Produto p) {
+    No* novo = (No*)malloc(sizeof(No));
+    novo->produto = p;
+    novo->esq = novo->dir = NULL;
+    return novo;
+}
+
+No* inserir(No* raiz, Produto p) {
+    if (raiz == NULL)
+        return criarNo(p);
+    
+    if (p.id < raiz->produto.id)
+        raiz->esq = inserir(raiz->esq, p);
+    else if (p.id > raiz->produto.id)
+        raiz->dir = inserir(raiz->dir, p);
+    
+    return raiz;
+}
+
+No* menorValor(No* raiz) {
+    No* atual = raiz;
+    while (atual && atual->esq != NULL)
+        atual = atual->esq;
+    return atual;
+}
+
+No* remover(No* raiz, int id) {
+    if (raiz == NULL) return NULL;
+
+    if (id < raiz->produto.id) {
+        raiz->esq = remover(raiz->esq, id);
+    } else if (id > raiz->produto.id) {
+        raiz->dir = remover(raiz->dir, id);
+    } else {
+        if (raiz->esq == NULL) {
+            No* temp = raiz->dir;
+            free(raiz);
+            return temp;
+        } else if (raiz->dir == NULL) {
+            No* temp = raiz->esq;
+            free(raiz);
+            return temp;
+        }
+
+        No* temp = menorValor(raiz->dir);
+        raiz->produto = temp->produto;
+        raiz->dir = remover(raiz->dir, temp->produto.id);
+    }
+
+    return raiz;
+}
+
+void atualizarQuantidade(No* raiz, int id, int quantidadeVendida) {
+    if (raiz == NULL) return;
+
+    if (id < raiz->produto.id)
+        atualizarQuantidade(raiz->esq, id, quantidadeVendida);
+    else if (id > raiz->produto.id)
+        atualizarQuantidade(raiz->dir, id, quantidadeVendida);
+    else
+        raiz->produto.quantidade -= quantidadeVendida;
+}
+
+void listarEstoqueBaixo(No* raiz, int limite) {
+    if (raiz != NULL) {
+        listarEstoqueBaixo(raiz->esq, limite);
+        if (raiz->produto.quantidade < limite)
+            printf("ID: %d | Nome: %s | Quantidade: %d\n", raiz->produto.id, raiz->produto.nome, raiz->produto.quantidade);
+        listarEstoqueBaixo(raiz->dir, limite);
+    }
+}
+
+void buscarPorPreco(No* raiz, float min, float max) {
+    if (raiz != NULL) {
+        buscarPorPreco(raiz->esq, min, max);
+        if (raiz->produto.preco >= min && raiz->produto.preco <= max)
+            printf("ID: %d | Nome: %s | Preço: %.2f\n", raiz->produto.id, raiz->produto.nome, raiz->produto.preco);
+        buscarPorPreco(raiz->dir, min, max);
+    }
+}
+
+void pre_ordem(No* raiz) {
+    if (raiz != NULL) {
+        printf("ID: %d | Nome: %s | Quantidade: %d | Preço: %.2f\n",
+               raiz->produto.id, raiz->produto.nome, raiz->produto.quantidade, raiz->produto.preco);
+        pre_ordem(raiz->esq);
+        pre_ordem(raiz->dir);
+    }
+}
+
+int main() {
+    setlocale(LC_ALL, "Portuguese");
+
+    No* raiz = NULL;
+    int opcao;
+
+    do {
+        printf("\n1. Inserir produto\n");
+        printf("2. Remover produto\n");
+        printf("3. Registrar venda (atualizar estoque)\n");
+        printf("4. Listar produtos com estoque baixo\n");
+        printf("5. Buscar produtos por faixa de preço\n");
+        printf("6. Listar todos os produtos (pré-ordem)\n");
+        printf("0. Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        if (opcao == 1) {
+            Produto p;
+            printf("ID do produto: ");
+            scanf("%d", &p.id);
+            getchar();
+
+            printf("Nome do produto: ");
+            fgets(p.nome, 100, stdin);
+            p.nome[strcspn(p.nome, "\n")] = '\0';
+
+            printf("Quantidade em estoque: ");
+            scanf("%d", &p.quantidade);
+
+            printf("Preço: ");
+            scanf("%f", &p.preco);
+            getchar();
+
+            raiz = inserir(raiz, p);
+
+        } else if (opcao == 2) {
+            int id;
+            printf("ID do produto a remover: ");
+            scanf("%d", &id);
+            getchar();
+            raiz = remover(raiz, id);
+
+        } else if (opcao == 3) {
+            int id, quantidade;
+            printf("ID do produto vendido: ");
+            scanf("%d", &id);
+            printf("Quantidade vendida: ");
+            scanf("%d", &quantidade);
+            getchar();
+            atualizarQuantidade(raiz, id, quantidade);
+
+        } else if (opcao == 4) {
+            int limite;
+            printf("Digite o limite de estoque: ");
+            scanf("%d", &limite);
+            getchar();
+            listarEstoqueBaixo(raiz, limite);
+
+        } else if (opcao == 5) {
+            float min, max;
+            printf("Digite o preço mínimo: ");
+            scanf("%f", &min);
+            printf("Digite o preço máximo: ");
+            scanf("%f", &max);
+            getchar();
+            buscarPorPreco(raiz, min, max);
+
+        } else if (opcao == 6) {
+            printf("\nProdutos cadastrados (pré-ordem):\n");
+            pre_ordem(raiz);
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
+
+Parte3
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <locale.h>
+
+typedef struct Contato {
+    char nome[100];
+    char telefone[20];
+    char email[100];
+} Contato;
+
+typedef struct No {
+    Contato contato;
+    struct No *esq;
+    struct No *dir;
+} No;
+
+No* criarNo(Contato c) {
+    No* novo = (No*)malloc(sizeof(No));
+    novo->contato = c;
+    novo->esq = novo->dir = NULL;
+    return novo;
+}
+
+No* inserir(No* raiz, Contato c) {
+    if (raiz == NULL)
+        return criarNo(c);
+    
+    if (strcmp(c.nome, raiz->contato.nome) < 0)
+        raiz->esq = inserir(raiz->esq, c);
+    else if (strcmp(c.nome, raiz->contato.nome) > 0)
+        raiz->dir = inserir(raiz->dir, c);
+
+    return raiz;
+}
+
+No* menorValor(No* raiz) {
+    No* atual = raiz;
+    while (atual && atual->esq != NULL)
+        atual = atual->esq;
+    return atual;
+}
+
+No* remover(No* raiz, const char* nome) {
+    if (raiz == NULL) return NULL;
+
+    int cmp = strcmp(nome, raiz->contato.nome);
+    if (cmp < 0) {
+        raiz->esq = remover(raiz->esq, nome);
+    } else if (cmp > 0) {
+        raiz->dir = remover(raiz->dir, nome);
+    } else {
+        if (raiz->esq == NULL) {
+            No* temp = raiz->dir;
+            free(raiz);
+            return temp;
+        } else if (raiz->dir == NULL) {
+            No* temp = raiz->esq;
+            free(raiz);
+            return temp;
+        }
+
+        No* temp = menorValor(raiz->dir);
+        raiz->contato = temp->contato;
+        raiz->dir = remover(raiz->dir, temp->contato.nome);
+    }
+
+    return raiz;
+}
+
+void atualizarContato(No* raiz, const char* nome) {
+    if (raiz == NULL) return;
+
+    int cmp = strcmp(nome, raiz->contato.nome);
+    if (cmp < 0)
+        atualizarContato(raiz->esq, nome);
+    else if (cmp > 0)
+        atualizarContato(raiz->dir, nome);
+    else {
+        printf("Novo telefone: ");
+        fgets(raiz->contato.telefone, 20, stdin);
+        raiz->contato.telefone[strcspn(raiz->contato.telefone, "\n")] = '\0';
+
+        printf("Novo email: ");
+        fgets(raiz->contato.email, 100, stdin);
+        raiz->contato.email[strcspn(raiz->contato.email, "\n")] = '\0';
+
+        printf("Contato atualizado!\n");
+    }
+}
+
+void buscarContato(No* raiz, const char* nome) {
+    if (raiz == NULL) {
+        printf("Contato não encontrado.\n");
+        return;
+    }
+
+    int cmp = strcmp(nome, raiz->contato.nome);
+    if (cmp < 0)
+        buscarContato(raiz->esq, nome);
+    else if (cmp > 0)
+        buscarContato(raiz->dir, nome);
+    else {
+        printf("\nNome: %s\nTelefone: %s\nEmail: %s\n", raiz->contato.nome, raiz->contato.telefone, raiz->contato.email);
+    }
+}
+
+void pos_ordem(No* raiz) {
+    if (raiz != NULL) {
+        pos_ordem(raiz->esq);
+        pos_ordem(raiz->dir);
+        printf("Nome: %s | Telefone: %s | Email: %s\n",
+               raiz->contato.nome, raiz->contato.telefone, raiz->contato.email);
+    }
+}
+
+void autocompletar(No* raiz, const char* prefixo) {
+    if (raiz != NULL) {
+        autocompletar(raiz->esq, prefixo);
+        if (strncmp(raiz->contato.nome, prefixo, strlen(prefixo)) == 0) {
+            printf("Nome: %s | Telefone: %s | Email: %s\n",
+                   raiz->contato.nome, raiz->contato.telefone, raiz->contato.email);
+        }
+        autocompletar(raiz->dir, prefixo);
+    }
+}
+
+int main() {
+    setlocale(LC_ALL, "Portuguese");
+
+    No* raiz = NULL;
+    int opcao;
+
+    do {
+        printf("\n1. Adicionar contato\n");
+        printf("2. Remover contato\n");
+        printf("3. Atualizar contato\n");
+        printf("4. Buscar contato por nome\n");
+        printf("5. Listar todos os contatos (pós-ordem)\n");
+        printf("6. Autocompletar nome\n");
+        printf("0. Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        if (opcao == 1) {
+            Contato c;
+            printf("Nome completo: ");
+            fgets(c.nome, 100, stdin);
+            c.nome[strcspn(c.nome, "\n")] = '\0';
+
+            printf("Telefone: ");
+            fgets(c.telefone, 20, stdin);
+            c.telefone[strcspn(c.telefone, "\n")] = '\0';
+
+            printf("Email: ");
+            fgets(c.email, 100, stdin);
+            c.email[strcspn(c.email, "\n")] = '\0';
+
+            raiz = inserir(raiz, c);
+
+        } else if (opcao == 2) {
+            char nome[100];
+            printf("Nome do contato a remover: ");
+            fgets(nome, 100, stdin);
+            nome[strcspn(nome, "\n")] = '\0';
+            raiz = remover(raiz, nome);
+
+        } else if (opcao == 3) {
+            char nome[100];
+            printf("Nome do contato a atualizar: ");
+            fgets(nome, 100, stdin);
+            nome[strcspn(nome, "\n")] = '\0';
+            atualizarContato(raiz, nome);
+
+        } else if (opcao == 4) {
+            char nome[100];
+            printf("Nome do contato a buscar: ");
+            fgets(nome, 100, stdin);
+            nome[strcspn(nome, "\n")] = '\0';
+            buscarContato(raiz, nome);
+
+        } else if (opcao == 5) {
+            printf("\nContatos em ordem pós-ordem:\n");
+            pos_ordem(raiz);
+
+        } else if (opcao == 6) {
+            char prefixo[100];
+            printf("Digite o prefixo do nome: ");
+            fgets(prefixo, 100, stdin);
+            prefixo[strcspn(prefixo, "\n")] = '\0';
+            printf("\nResultados para \"%s\":\n", prefixo);
+            autocompletar(raiz, prefixo);
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
+Parte 4
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <locale.h>
+
+
+typedef struct Leitura {
+    int timestamp;
+    float valor;
+    int idSensor;
+} Leitura;
+
+typedef struct No {
+    Leitura leitura;
+    struct No *esq;
+    struct No *dir;
+} No;
+
+No* criarNo(Leitura l) {
+    No* novo = (No*)malloc(sizeof(No));
+    novo->leitura = l;
+    novo->esq = novo->dir = NULL;
+    return novo;
+}
+
+No* inserir(No* raiz, Leitura l) {
+    if (raiz == NULL)
+        return criarNo(l);
+
+    if (l.timestamp < raiz->leitura.timestamp)
+        raiz->esq = inserir(raiz->esq, l);
+    else
+        raiz->dir = inserir(raiz->dir, l);
+
+    return raiz;
+}
+
+void listar_pre_ordem(No* raiz) {
+    if (raiz != NULL) {
+        printf("Timestamp: %d | Valor: %.2f | Sensor ID: %d\n",
+               raiz->leitura.timestamp, raiz->leitura.valor, raiz->leitura.idSensor);
+        listar_pre_ordem(raiz->esq);
+        listar_pre_ordem(raiz->dir);
+    }
+}
+
+void buscarIntervalo(No* raiz, int inicio, int fim) {
+    if (raiz == NULL)
+        return;
+
+    if (inicio <= raiz->leitura.timestamp && raiz->leitura.timestamp <= fim)
+        printf("Timestamp: %d | Valor: %.2f | Sensor ID: %d\n",
+               raiz->leitura.timestamp, raiz->leitura.valor, raiz->leitura.idSensor);
+
+    if (inicio < raiz->leitura.timestamp)
+        buscarIntervalo(raiz->esq, inicio, fim);
+
+    if (fim > raiz->leitura.timestamp)
+        buscarIntervalo(raiz->dir, inicio, fim);
+}
+
+void calcularMedia(No* raiz, int inicio, int fim, float* soma, int* count) {
+    if (raiz == NULL)
+        return;
+
+    if (inicio <= raiz->leitura.timestamp && raiz->leitura.timestamp <= fim) {
+        *soma += raiz->leitura.valor;
+        (*count)++;
+    }
+
+    if (inicio < raiz->leitura.timestamp)
+        calcularMedia(raiz->esq, inicio, fim, soma, count);
+
+    if (fim > raiz->leitura.timestamp)
+        calcularMedia(raiz->dir, inicio, fim, soma, count);
+}
+
+void detectarAnomalias(No* raiz, float min, float max) {
+    if (raiz == NULL)
+        return;
+
+    if (raiz->leitura.valor < min || raiz->leitura.valor > max)
+        printf("Anomalia - Timestamp: %d | Valor: %.2f | Sensor ID: %d\n",
+               raiz->leitura.timestamp, raiz->leitura.valor, raiz->leitura.idSensor);
+
+    detectarAnomalias(raiz->esq, min, max);
+    detectarAnomalias(raiz->dir, min, max);
+}
+
+int main() {
+	setlocale(LC_ALL, "Portuguese");
+	
+    No* raiz = NULL;
+    int opcao;
+
+    do {
+        printf("\n1. Inserir nova leitura\n");
+        printf("2. Listar leituras (pré-ordem)\n");
+        printf("3. Buscar leituras por intervalo de tempo\n");
+        printf("4. Calcular média de leituras no intervalo\n");
+        printf("5. Detectar leituras anômalas\n");
+        printf("0. Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+
+        if (opcao == 1) {
+            Leitura l;
+            printf("Timestamp (inteiro): ");
+            scanf("%d", &l.timestamp);
+            printf("Valor da leitura: ");
+            scanf("%f", &l.valor);
+            printf("ID do sensor: ");
+            scanf("%d", &l.idSensor);
+            raiz = inserir(raiz, l);
+
+        } else if (opcao == 2) {
+            printf("\nLeituras (Pré-ordem):\n");
+            listar_pre_ordem(raiz);
+
+        } else if (opcao == 3) {
+            int inicio, fim;
+            printf("Informe o intervalo de tempo (início e fim): ");
+            scanf("%d %d", &inicio, &fim);
+            printf("Leituras no intervalo %d - %d:\n", inicio, fim);
+            buscarIntervalo(raiz, inicio, fim);
+
+        } else if (opcao == 4) {
+            int inicio, fim, count = 0;
+            float soma = 0;
+            printf("Intervalo para cálculo da média (início e fim): ");
+            scanf("%d %d", &inicio, &fim);
+            calcularMedia(raiz, inicio, fim, &soma, &count);
+            if (count > 0)
+                printf("Média das leituras no intervalo: %.2f\n", soma / count);
+            else
+                printf("Nenhuma leitura no intervalo especificado.\n");
+
+        } else if (opcao == 5) {
+            float min, max;
+            printf("Informe o intervalo esperado de valores (mínimo e máximo): ");
+            scanf("%f %f", &min, &max);
+            printf("Leituras fora do intervalo %.2f - %.2f:\n", min, max);
+            detectarAnomalias(raiz, min, max);
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
+Parte 5
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <locale.h>
+
+typedef struct Filme {
+    char titulo[100];
+    char genero[50];
+    int classificacao;
+    float pontuacao;
+} Filme;
+
+typedef struct No {
+    Filme filme;
+    struct No *esq;
+    struct No *dir;
+} No;
+
+No* criarNo(Filme f) {
+    No* novo = (No*)malloc(sizeof(No));
+    novo->filme = f;
+    novo->esq = novo->dir = NULL;
+    return novo;
+}
+
+No* inserir(No* raiz, Filme f) {
+    if (raiz == NULL)
+        return criarNo(f);
+    
+    if (f.pontuacao < raiz->filme.pontuacao)
+        raiz->esq = inserir(raiz->esq, f);
+    else
+        raiz->dir = inserir(raiz->dir, f);
+
+    return raiz;
+}
+
+void buscarGenero(No* raiz, const char* genero) {
+    if (raiz != NULL) {
+        buscarGenero(raiz->esq, genero);
+        if (strcmp(raiz->filme.genero, genero) == 0)
+            printf("Título: %s - Pontuação: %.1f\n", raiz->filme.titulo, raiz->filme.pontuacao);
+        buscarGenero(raiz->dir, genero);
+    }
+}
+
+void coletarFilmes(No* raiz, Filme filmes[], int* count) {
+    if (raiz != NULL && *count < 100) {
+        coletarFilmes(raiz->dir, filmes, count);
+        filmes[(*count)++] = raiz->filme;
+        coletarFilmes(raiz->esq, filmes, count);
+    }
+}
+
+void top5Filmes(No* raiz) {
+    Filme filmes[100];
+    int count = 0;
+    coletarFilmes(raiz, filmes, &count);
+
+    int max = count < 5 ? count : 5;
+    for (int i = 0; i < max; i++) {
+        printf("Título: %s - Pontuação: %.1f\n", filmes[i].titulo, filmes[i].pontuacao);
+    }
+}
+
+void atualizarPontuacao(No* raiz, const char* titulo, float novaPontuacao) {
+    if (raiz == NULL)
+        return;
+
+    atualizarPontuacao(raiz->esq, titulo, novaPontuacao);
+    if (strcmp(raiz->filme.titulo, titulo) == 0)
+        raiz->filme.pontuacao = novaPontuacao;
+    atualizarPontuacao(raiz->dir, titulo, novaPontuacao);
+}
+
+void in_ordem(No* raiz) {
+    if (raiz != NULL) {
+        in_ordem(raiz->esq);
+        printf("Título: %s | Gênero: %s | Classificação: %d | Pontuação: %.1f\n",
+               raiz->filme.titulo, raiz->filme.genero, raiz->filme.classificacao, raiz->filme.pontuacao);
+        in_ordem(raiz->dir);
+    }
+}
+
+int main() {
+    setlocale(LC_ALL, "Portuguese");
+    
+    No* raiz = NULL;
+    int opcao;
+
+    do {
+        printf("\n1. Inserir novo filme\n");
+        printf("2. Buscar filmes por gênero\n");
+        printf("3. Listar top 5 filmes\n");
+        printf("4. Atualizar pontuação de um filme\n");
+        printf("5. Listar todos os filmes em ordem de pontuação\n");
+        printf("0. Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        if (opcao == 1) {
+            Filme f;
+            printf("Título: ");
+            fgets(f.titulo, 100, stdin);
+            f.titulo[strcspn(f.titulo, "\n")] = '\0';
+
+            printf("Gênero: ");
+            fgets(f.genero, 50, stdin);
+            f.genero[strcspn(f.genero, "\n")] = '\0';
+
+            printf("Classificação indicativa: ");
+            scanf("%d", &f.classificacao);
+
+            printf("Pontuação média: ");
+            scanf("%f", &f.pontuacao);
+            getchar();
+
+            raiz = inserir(raiz, f);
+
+        } else if (opcao == 2) {
+            char genero[50];
+            printf("Informe o gênero: ");
+            fgets(genero, 50, stdin);
+            genero[strcspn(genero, "\n")] = '\0';
+            buscarGenero(raiz, genero);
+
+        } else if (opcao == 3) {
+            printf("\nTop 5 filmes com maior pontuação:\n");
+            top5Filmes(raiz);
+
+        } else if (opcao == 4) {
+            char titulo[100];
+            float novaPontuacao;
+            printf("Informe o título do filme: ");
+            fgets(titulo, 100, stdin);
+            titulo[strcspn(titulo, "\n")] = '\0';
+
+            printf("Nova pontuação: ");
+            scanf("%f", &novaPontuacao);
+            getchar();
+
+            atualizarPontuacao(raiz, titulo, novaPontuacao);
+            printf("Pontuação atualizada.\n");
+
+        } else if (opcao == 5) {
+            printf("\nFilmes em ordem de pontuação:\n");
+            in_ordem(raiz);
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
+PARTE 6
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <locale.h>
+
+
+typedef struct Tarefa {
+    char descricao[100];
+    char dataVencimento[11]; 
+    char prioridade[10];     
+} Tarefa;
+
+typedef struct No {
+    Tarefa tarefa;
+    struct No *esq;
+    struct No *dir;
+} No;
+
+No* criarNo(Tarefa t) {
+    No* novo = (No*)malloc(sizeof(No));
+    novo->tarefa = t;
+    novo->esq = novo->dir = NULL;
+    return novo;
+}
+
+int compararDatas(const char* data1, const char* data2) {
+    int d1, m1, a1, d2, m2, a2;
+    sscanf(data1, "%d/%d/%d", &d1, &m1, &a1);
+    sscanf(data2, "%d/%d/%d", &d2, &m2, &a2);
+
+    if (a1 != a2) return a1 - a2;
+    if (m1 != m2) return m1 - m2;
+    return d1 - d2;
+}
+
+No* inserir(No* raiz, Tarefa t) {
+    if (raiz == NULL)
+        return criarNo(t);
+    if (compararDatas(t.dataVencimento, raiz->tarefa.dataVencimento) < 0)
+        raiz->esq = inserir(raiz->esq, t);
+    else
+        raiz->dir = inserir(raiz->dir, t);
+    return raiz;
+}
+
+void listarPosOrdem(No* raiz) {
+    if (raiz != NULL) {
+        listarPosOrdem(raiz->esq);
+        listarPosOrdem(raiz->dir);
+        printf("Tarefa: %s | Vencimento: %s | Prioridade: %s\n",
+               raiz->tarefa.descricao,
+               raiz->tarefa.dataVencimento,
+               raiz->tarefa.prioridade);
+    }
+}
+
+void filtrarPorPrioridade(No* raiz, const char* prioridade) {
+    if (raiz != NULL) {
+        filtrarPorPrioridade(raiz->esq, prioridade);
+        filtrarPorPrioridade(raiz->dir, prioridade);
+        if (strcmp(raiz->tarefa.prioridade, prioridade) == 0)
+            printf("Tarefa: %s | Vencimento: %s | Prioridade: %s\n",
+                   raiz->tarefa.descricao,
+                   raiz->tarefa.dataVencimento,
+                   raiz->tarefa.prioridade);
+    }
+}
+
+void notificarVencidas(No* raiz, const char* hoje) {
+    if (raiz != NULL) {
+        notificarVencidas(raiz->esq, hoje);
+        notificarVencidas(raiz->dir, hoje);
+        if (compararDatas(raiz->tarefa.dataVencimento, hoje) < 0)
+            printf("TAREFA VENCIDA! %s | Vencimento: %s\n",
+                   raiz->tarefa.descricao,
+                   raiz->tarefa.dataVencimento);
+    }
+}
+
+void atualizarTarefa(No* raiz, const char* descricaoAlvo) {
+    if (raiz == NULL) return;
+
+    atualizarTarefa(raiz->esq, descricaoAlvo);
+    atualizarTarefa(raiz->dir, descricaoAlvo);
+
+    if (strcmp(raiz->tarefa.descricao, descricaoAlvo) == 0) {
+        printf("Nova descrição: ");
+        fgets(raiz->tarefa.descricao, 100, stdin);
+        raiz->tarefa.descricao[strcspn(raiz->tarefa.descricao, "\n")] = '\0';
+
+        printf("Nova data de vencimento (DD/MM/AAAA): ");
+        fgets(raiz->tarefa.dataVencimento, 11, stdin);
+        raiz->tarefa.dataVencimento[strcspn(raiz->tarefa.dataVencimento, "\n")] = '\0';
+
+        printf("Nova prioridade (baixa/media/alta): ");
+        fgets(raiz->tarefa.prioridade, 10, stdin);
+        raiz->tarefa.prioridade[strcspn(raiz->tarefa.prioridade, "\n")] = '\0';
+
+        printf("Tarefa atualizada!\n");
+    }
+}
+
+int main() {
+	setlocale(LC_ALL, "Portuguese");
+	
+    No* raiz = NULL;
+    int opcao;
+
+    do {
+        printf("\n1. Adicionar tarefa\n");
+        printf("2. Listar tarefas por vencimento (pós-ordem)\n");
+        printf("3. Filtrar por prioridade\n");
+        printf("4. Notificar tarefas vencidas\n");
+        printf("5. Atualizar tarefa\n");
+        printf("0. Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        if (opcao == 1) {
+            Tarefa t;
+            printf("Descrição da tarefa: ");
+            fgets(t.descricao, 100, stdin);
+            t.descricao[strcspn(t.descricao, "\n")] = '\0';
+
+            printf("Data de vencimento (DD/MM/AAAA): ");
+            fgets(t.dataVencimento, 11, stdin);
+            t.dataVencimento[strcspn(t.dataVencimento, "\n")] = '\0';
+
+            printf("Prioridade (baixa/media/alta): ");
+            fgets(t.prioridade, 10, stdin);
+            t.prioridade[strcspn(t.prioridade, "\n")] = '\0';
+
+            raiz = inserir(raiz, t);
+
+        } else if (opcao == 2) {
+            printf("\nTarefas em pós-ordem:\n");
+            listarPosOrdem(raiz);
+
+        } else if (opcao == 3) {
+            char prioridade[10];
+            printf("Digite a prioridade desejada (baixa/media/alta): ");
+            fgets(prioridade, 10, stdin);
+            prioridade[strcspn(prioridade, "\n")] = '\0';
+            filtrarPorPrioridade(raiz, prioridade);
+
+        } else if (opcao == 4) {
+            char hoje[11];
+            printf("Informe a data atual (DD/MM/AAAA): ");
+            fgets(hoje, 11, stdin);
+            hoje[strcspn(hoje, "\n")] = '\0';
+            printf("\nTarefas vencidas:\n");
+            notificarVencidas(raiz, hoje);
+
+        } else if (opcao == 5) {
+            char descricao[100];
+            printf("Informe a descrição da tarefa a atualizar: ");
+            fgets(descricao, 100, stdin);
+            descricao[strcspn(descricao, "\n")] = '\0';
+            atualizarTarefa(raiz, descricao);
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
